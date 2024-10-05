@@ -1,0 +1,26 @@
+[build-system]
+requires = ["setuptools>=45", "setuptools_scm[toml]>=6.2"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "RPO"
+authors = [
+    {name = "Blake Armstrong", email = "blakearmstrong21@gmail.com"},
+]
+description = "A command-line tool for organising research papers"
+readme = "README.md"
+requires-python = ">=3.7"
+keywords = ["research", "papers", "organisation", "cli"]
+license = {text = "MIT"}
+classifiers = [
+    "Programming Language :: Python :: 3",
+]
+dependencies = [
+    "argparse",
+]
+dynamic = ["version"]
+
+[project.scripts]
+rpo = "rpo.__main__:main"
+
+[tool.setuptools_scm]
