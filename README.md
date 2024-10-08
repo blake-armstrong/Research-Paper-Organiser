@@ -1,6 +1,6 @@
 # Research Paper Organiser (RPO)
 
-Research Paper Organiser (RPO) is a command-line tool designed to help researchers manage their collection of academic papers. It allows you to add, search, list, and organize research papers along with their metadata and associated PDF files.
+Research Paper Organiser (RPO) is a command-line tool designed to help researchers manage their collection of academic papers. It allows you to add, search, list, and organise research papers along with their metadata and associated PDF files.
 
 ## Features
 
@@ -17,7 +17,7 @@ Research Paper Organiser (RPO) is a command-line tool designed to help researche
 1. Clone this repository:
    ```
    git clone https://github.com/blake-armstrong/Research-Paper-Organiser.git
-   cd research-paper-organizer
+   cd Research-Paper-Organiser
    ```
 
 2. Install the package:
