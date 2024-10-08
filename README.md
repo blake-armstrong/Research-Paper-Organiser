@@ -1,78 +1,93 @@
-# Research Paper Organiser
+# Research Paper Organiser (RPO)
 
-Research Paper Organiser is a command-line tool designed to help researchers and students manage their collection of academic papers. It allows you to store, organize, and quickly retrieve information about your research papers, including metadata, keywords, and BibTeX entries.
+Research Paper Organiser (RPO) is a command-line tool designed to help researchers manage their collection of academic papers. It allows you to add, search, list, and organize research papers along with their metadata and associated PDF files.
 
 ## Features
 
-- Add new papers with metadata (title, year, authors, keywords)
-- Store BibTeX entries for easy citation
+- Add papers with BibTeX information and PDF files
 - Search papers by title, author, or keyword
 - List all papers in the database
-- View detailed information about specific papers
+- View detailed information about a specific paper
+- Open the PDF file associated with a paper
+- Remove papers from the database
+- Automatically reorder paper IDs to maintain consistency
 
 ## Installation
 
-1. Ensure you have Python 3.7 or higher installed.
-
-2. Clone this repository:
+1. Clone this repository:
    ```
-   git clone https://github.com/blake-armstrong/RPO.git
-   cd RPO
+   git clone https://github.com/blake-armstrong/Research-Paper-Organiser.git
+   cd research-paper-organizer
    ```
 
-3. Install the package:
+2. Install the package:
    ```
-   pip install -e .
+   pip install .
    ```
+
+## Configuration
+
+Before using the program, you need to set up the configuration:
+
+```
+rpo config
+```
+
+You will be prompted to enter:
+- The path for the database file
+- The directory for storing PDF files
 
 ## Usage
 
-After installation, you can use the `rpo` command to interact with the tool. Here are the available commands:
+After installation, you can use the `rpo` command to run the Research Paper Organiser.
 
-### Add a new paper
+### Adding a paper
 
 ```
-rpo add --title "Paper Title" --year 2023 --authors "Author One" "Author Two" --keywords "keyword1" "keyword2" --bibtex "@article{...}" --file "path/to/paper.pdf"
+rpo add --bibtex "bibtex_entry" --file "path/to/pdf" --keywords keyword1 keyword2
 ```
 
-### Search for papers
+### Searching for papers
 
 ```
 rpo search "query"
 ```
 
-This will search for the query in titles, authors, and keywords.
-
-### List all papers
+### Listing all papers
 
 ```
 rpo list
 ```
 
-### View paper details
+### Viewing paper details
 
 ```
 rpo details <paper_id>
 ```
 
-Replace `<paper_id>` with the ID of the paper you want to view.
-
-### Get help
-
-For help with any command, add `--help` after the command:
+### Opening a paper's PDF
 
 ```
-rpo --help
-rpo add --help
+rpo open <paper_id>
 ```
 
-## Configuration
-
-By default, the program uses a SQLite database named `research_papers.db` in the current directory and expects PDF files to be stored in `~/research_papers/`. You can change these defaults by using the `--db` and `--pdf_dir` options:
+### Removing a paper
 
 ```
-rpo --db /path/to/database.db --pdf_dir /path/to/pdf/directory [command]
+rpo remove <paper_id>
 ```
+
+## File Structure
+
+- `__main__.py`: The main entry point of the program
+- `rpo.py`: Contains the `ResearchPaperOrganiser` class with core functionality
+- `config.py`: Handles configuration management
+
+## Dependencies
+
+- bibtexparser: For parsing BibTeX entries
+- sqlite3: For database management (included in Python standard library)
+- subprocess, platform: For opening PDF files (included in Python standard library)
 
 ## Contributing
 
@@ -80,4 +95,4 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 
 ## License
 
-This project is licensed under the MIT License.
+This project is licensed under the MIT License - see the LICENSE file for details.

@@ -17,6 +17,9 @@ classifiers = [
 ]
 dependencies = [
     "argparse",
+    "bibtexparser",
+    "subprocess",
+    "platform",
 ]
 dynamic = ["version"]
 
