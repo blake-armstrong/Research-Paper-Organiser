@@ -4,6 +4,7 @@ from typing import List, Tuple, Optional, Dict
 import subprocess
 import platform
 import os
+import textwrap
 import bibtexparser
 
 
@@ -137,7 +138,6 @@ class ResearchPaperOrganiser:
         )
 
         self.conn.commit()
-        self.reorder_all_paper_ids()
 
     def remove_paper(self, paper_id: int) -> None:
         # Start a transaction
@@ -210,66 +210,6 @@ class ResearchPaperOrganiser:
             print(f"An error occurred: {e}")
             raise
 
-    def reorder_all_paper_ids(self) -> None:
-        """Reorder all paper IDs to ensure they are consecutive."""
-        self.conn.execute("BEGIN TRANSACTION")
-        try:
-            # Get all papers ordered by year (DESC) and title
-            self.cursor.execute("SELECT id FROM papers ORDER BY year DESC, title")
-            papers = self.cursor.fetchall()
-
-            # Create a temporary table to store the new order
-            self.cursor.execute(
-                """
-                CREATE TEMPORARY TABLE temp_order (
-                    old_id INTEGER PRIMARY KEY,
-                    new_id INTEGER
-                )
-            """
-            )
-
-            # Populate the temporary table with the new order
-            for new_id, (old_id,) in enumerate(papers, start=1):
-                self.cursor.execute(
-                    "INSERT INTO temp_order (old_id, new_id) VALUES (?, ?)",
-                    (old_id, new_id),
-                )
-
-            # Update the papers table
-            self.cursor.execute(
-                """
-                UPDATE papers
-                SET id = (SELECT new_id FROM temp_order WHERE old_id = papers.id)
-            """
-            )
-
-            # Update related tables
-            for table in ["paper_authors", "paper_keywords", "bibtex_entries"]:
-                self.cursor.execute(
-                    f"""
-                    UPDATE {table}
-                    SET paper_id = (SELECT new_id FROM temp_order WHERE old_id = {table}.paper_id)
-                """
-                )
-
-            # Drop the temporary table
-            self.cursor.execute("DROP TABLE temp_order")
-
-            # Reset the auto-increment counter
-            self.cursor.execute(
-                "UPDATE sqlite_sequence SET seq = (SELECT MAX(id) FROM papers) WHERE name = 'papers'"
-            )
-
-            # Commit the transaction
-            self.conn.commit()
-            print("All paper IDs are correctly ordered.")
-
-        except Exception as e:
-            # If any error occurs, roll back the transaction
-            self.conn.rollback()
-            print(f"An error occurred: {e}")
-            raise
-
     def get_paper_details(
         self, paper_id: int
     ) -> Optional[Tuple[str, int, str, str, str, str, str]]:
@@ -329,9 +269,9 @@ class ResearchPaperOrganiser:
         author_list = authors.split(" and ")
         if len(author_list) > 2:
             return f"{author_list[0]} et al."
-        return " and ".join(author_list)
+        return " & ".join(author_list)
 
-    def list_all_papers(self) -> List[Tuple[int, str, str, int, str, str]]:
+    def list_all_papers(self) -> List[Tuple[int, str, int, str, str, str]]:
         self.cursor.execute(
             """
             SELECT p.id, 
@@ -348,15 +288,69 @@ class ResearchPaperOrganiser:
             """
         )
         papers = self.cursor.fetchall()
-        return [
-            (id, self.format_authors(authors), year, journal, title, file_path)
-            for id, authors, year, journal, title, file_path in papers
-        ]
+        # return [
+        #     (id, self.format_authors(authors), year, journal, title, file_path)
+        #     for id, authors, year, journal, title, file_path in papers
+        # ]
+        formatted_papers = []
+        for id, authors, year, journal, title, file_path in papers:
+            formatted_authors = self.format_authors(authors)
+            formatted_papers.append(
+                (id, formatted_authors, year, journal, title, file_path)
+            )
+        return formatted_papers
+
+    def print_papers(self, papers: List[Tuple[int, str, int, str, str, str]]) -> None:
+        if not papers:
+            print("No papers found.")
+            return
+
+        # Define column widths
+        id_width = 4
+        authors_width = 30
+        year_width = 6
+        journal_width = 20
+        title_width = 50
+
+        # Print header
+        print(
+            f"{'ID':<{id_width}} {'Authors':<{authors_width}} {'Year':<{year_width}} {'Journal':<{journal_width}} {'Title'}"
+        )
+        print(
+            "-"
+            * (4 + id_width + authors_width + year_width + journal_width + title_width)
+        )
+
+        # Print each paper
+        for id, authors, year, journal, title, _ in papers:
+            # Truncate authors if too long
+            if len(authors) > authors_width:
+                authors = authors[: authors_width - 3] + "..."
+
+            # Truncate journal if too long
+            if len(journal) > journal_width:
+                journal = journal[: journal_width - 3] + "..."
+
+            # Wrap title
+            wrapped_title = textwrap.wrap(title, width=title_width)
+
+            # Print first line
+            print(
+                f"{id:<{id_width}} {authors:<{authors_width}} {year:<{year_width}} {journal:<{journal_width}} {wrapped_title[0]}"
+            )
+
+            # Print remaining lines of title, if any
+            for line in wrapped_title[1:]:
+                print(
+                    f"{'':<{id_width}} {'':<{authors_width}} {'':<{year_width}} {'':<{journal_width}} {line}"
+                )
+
+            print()  # Add a blank line between papers
 
     def search_papers(self, query: str) -> List[Tuple[int, str, int, str, str, str]]:
         self.cursor.execute(
             """
-            SELECT DISTINCT p.id, 
+            SELECT p.id, 
                    GROUP_CONCAT(DISTINCT a.name, ' and ') as authors,
                    p.year, 
                    p.journal, 

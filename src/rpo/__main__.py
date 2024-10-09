@@ -4,7 +4,7 @@ from .config import get_config, update_config
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Research Paper Organizer")
+    parser = argparse.ArgumentParser(description="Research Paper organiser")
     subparsers = parser.add_subparsers(dest="command", help="Available commands")
 
     # Config command
@@ -48,29 +48,28 @@ def main() -> None:
         print("Configuration is required before using the program.")
         return
 
-    organizer = ResearchPaperOrganiser(config["db_path"], config["pdf_dir"])
+    organiser = ResearchPaperOrganiser(config["db_path"], config["pdf_dir"])
 
     if args.command == "add":
         try:
-            organizer.add_paper(args.bibtex, args.file, args.keywords)
+            organiser.add_paper(args.bibtex, args.file, args.keywords)
             print("Paper added successfully.")
         except ValueError as e:
             print(f"Error: {e}")
 
     elif args.command == "remove":
         try:
-            organizer.remove_paper(args.paper_id)
+            organiser.remove_paper(args.paper_id)
             print(f"Paper with ID {args.paper_id} removed successfully.")
         except ValueError as e:
             print(f"Error: {e}")
 
     elif args.command == "list":
-        papers = organizer.list_all_papers()
-        for paper_id, authors, year, journal, title, file_path in papers:
-            print(f"{paper_id}. {authors} ({year}). {journal}. {title}")
+        papers = organiser.list_all_papers()
+        organiser.print_papers(papers)
 
     elif args.command == "search":
-        results = organizer.search_papers(args.query)
+        results = organiser.search_papers(args.query)
         if results:
             for paper_id, authors, year, journal, title, file_path in results:
                 print(f"{paper_id}. {authors} ({year}). {journal}. {title}")
@@ -78,7 +77,7 @@ def main() -> None:
             print("No results found.")
 
     elif args.command == "details":
-        details = organizer.get_paper_details(args.paper_id)
+        details = organiser.get_paper_details(args.paper_id)
         if details:
             title, year, file_path, journal, authors, keywords, bibtex = details
             print(f"Title: {title}")
@@ -92,9 +91,9 @@ def main() -> None:
             print(f"No paper found with ID {args.paper_id}")
 
     elif args.command == "open":
-        organizer.open_paper(args.paper_id)
+        organiser.open_paper(args.paper_id)
 
-    organizer.close()
+    organiser.close()
 
 
 if __name__ == "__main__":
