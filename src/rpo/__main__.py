@@ -1,6 +1,7 @@
 import argparse
 from .rpo import ResearchPaperOrganiser
-from .config import get_config, update_config
+from .config import load_config, update_config
+from .gui import run_gui
 
 
 def main() -> None:
@@ -9,6 +10,11 @@ def main() -> None:
 
     # Config command
     config_parser = subparsers.add_parser("config", help="Update configuration")
+
+    # GUI command
+    gui_parser = subparsers.add_parser(
+        "gui", help="Launch the graphical user interface"
+    )
 
     # Add paper
     add_parser = subparsers.add_parser("add", help="Add a new paper")
@@ -39,16 +45,16 @@ def main() -> None:
 
     args = parser.parse_args()
 
+    config = load_config()
     if args.command == "config":
         update_config()
         return
 
-    config = get_config()
-    if config is None:
-        print("Configuration is required before using the program.")
-        return
+    organiser = ResearchPaperOrganiser(config)
 
-    organiser = ResearchPaperOrganiser(config["db_path"], config["pdf_dir"])
+    if args.command == "gui":
+        run_gui(organiser)
+        return
 
     if args.command == "add":
         try:
@@ -71,8 +77,7 @@ def main() -> None:
     elif args.command == "search":
         results = organiser.search_papers(args.query)
         if results:
-            for paper_id, authors, year, journal, title, file_path in results:
-                print(f"{paper_id}. {authors} ({year}). {journal}. {title}")
+            organiser.print_papers(results)
         else:
             print("No results found.")
 

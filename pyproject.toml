@@ -17,6 +17,7 @@ classifiers = [
 ]
 dependencies = [
     "bibtexparser",
+    "PyQt6",
 ]
 dynamic = ["version"]
 

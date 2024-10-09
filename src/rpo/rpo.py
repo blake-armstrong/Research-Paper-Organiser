@@ -1,18 +1,31 @@
 import sqlite3
 from pathlib import Path
 from typing import List, Tuple, Optional, Dict
+from dataclasses import dataclass
 import subprocess
 import platform
 import os
 import textwrap
 import bibtexparser
 
+from .config import Config
+
+
+@dataclass
+class Paper:
+    id: int
+    authors: str
+    year: int
+    journal: str
+    title: str
+    file_path: str
+
 
 class ResearchPaperOrganiser:
-    def __init__(self, db_path: str, pdf_dir: str):
-        self.conn: sqlite3.Connection = sqlite3.connect(db_path)
+    def __init__(self, config: Config):
+        self.conn: sqlite3.Connection = sqlite3.connect(config.db_path)
         self.cursor: sqlite3.Cursor = self.conn.cursor()
-        self.pdf_dir: Path = Path(pdf_dir)
+        # self.pdf_dir: Path = Path(pdf_dir)
         self.setup_database()
         self.update_database_schema()
 
@@ -210,9 +223,7 @@ class ResearchPaperOrganiser:
             print(f"An error occurred: {e}")
             raise
 
-    def get_paper_details(
-        self, paper_id: int
-    ) -> Optional[Tuple[str, int, str, str, str, str, str]]:
+    def get_paper_details(self, paper_id: int) -> Optional[Paper]:
         self.cursor.execute(
             """
             SELECT p.title, p.year, p.file_path, p.journal, GROUP_CONCAT(DISTINCT a.name), 
@@ -271,7 +282,7 @@ class ResearchPaperOrganiser:
             return f"{author_list[0]} et al."
         return " & ".join(author_list)
 
-    def list_all_papers(self) -> List[Tuple[int, str, int, str, str, str]]:
+    def list_all_papers(self) -> List[Paper]:
         self.cursor.execute(
             """
             SELECT p.id, 
@@ -288,19 +299,12 @@ class ResearchPaperOrganiser:
             """
         )
         papers = self.cursor.fetchall()
-        # return [
-        #     (id, self.format_authors(authors), year, journal, title, file_path)
-        #     for id, authors, year, journal, title, file_path in papers
-        # ]
-        formatted_papers = []
-        for id, authors, year, journal, title, file_path in papers:
-            formatted_authors = self.format_authors(authors)
-            formatted_papers.append(
-                (id, formatted_authors, year, journal, title, file_path)
-            )
-        return formatted_papers
+        return [
+            Paper(id, self.format_authors(authors), year, journal, title, file_path)
+            for id, authors, year, journal, title, file_path in papers
+        ]
 
-    def print_papers(self, papers: List[Tuple[int, str, int, str, str, str]]) -> None:
+    def print_papers(self, papers: List[Paper]) -> None:
         if not papers:
             print("No papers found.")
             return
@@ -322,21 +326,23 @@ class ResearchPaperOrganiser:
         )
 
         # Print each paper
-        for id, authors, year, journal, title, _ in papers:
+        for paper in papers:
             # Truncate authors if too long
+            authors = paper.authors
             if len(authors) > authors_width:
                 authors = authors[: authors_width - 3] + "..."
 
             # Truncate journal if too long
+            journal = paper.journal
             if len(journal) > journal_width:
                 journal = journal[: journal_width - 3] + "..."
 
             # Wrap title
-            wrapped_title = textwrap.wrap(title, width=title_width)
+            wrapped_title = textwrap.wrap(paper.title, width=title_width)
 
             # Print first line
             print(
-                f"{id:<{id_width}} {authors:<{authors_width}} {year:<{year_width}} {journal:<{journal_width}} {wrapped_title[0]}"
+                f"{paper.id:<{id_width}} {authors:<{authors_width}} {paper.year:<{year_width}} {journal:<{journal_width}} {wrapped_title[0]}"
             )
 
             # Print remaining lines of title, if any
@@ -347,11 +353,11 @@ class ResearchPaperOrganiser:
 
             print()  # Add a blank line between papers
 
-    def search_papers(self, query: str) -> List[Tuple[int, str, int, str, str, str]]:
+    def search_papers(self, query: str) -> List[Paper]:
         self.cursor.execute(
             """
             SELECT p.id, 
-                   GROUP_CONCAT(DISTINCT a.name, ' and ') as authors,
+                   GROUP_CONCAT(a.name, ' and ') as authors,
                    p.year, 
                    p.journal, 
                    p.title,
@@ -369,7 +375,7 @@ class ResearchPaperOrganiser:
         )
         papers = self.cursor.fetchall()
         return [
-            (id, self.format_authors(authors), year, journal, title, file_path)
+            Paper(id, self.format_authors(authors), year, journal, title, file_path)
             for id, authors, year, journal, title, file_path in papers
         ]
 
